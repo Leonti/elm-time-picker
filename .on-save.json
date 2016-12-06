@@ -1,0 +1,8 @@
+{
+    "commands" : [
+        {
+            "watch" : "src/**/*.elm",
+            "command" : "elm make src/Main.elm --output=gen/main.js --debug"
+        }
+    ]
+}
