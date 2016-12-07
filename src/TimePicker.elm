@@ -1,4 +1,4 @@
-module TimePicker exposing (Model, Msg, init, update, view, emptyModel)
+module TimePicker exposing (Model, Msg, init, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -17,6 +17,18 @@ type alias Position =
 type alias Selection =
     { angle : Int
     , isInner : Bool
+    }
+
+
+type Mode
+    = Hours
+    | Minutes
+
+
+type alias Settings =
+    { is24Hours : Bool
+    , hours : Int
+    , minutes : Int
     }
 
 
@@ -80,17 +92,20 @@ hourStep =
 
 
 type alias Model =
-    {}
+    { settings : Settings
+    , mode : Mode
+    , hoursSelected : Int
+    , minutesSelected : Int
+    }
 
 
-emptyModel : Model
-emptyModel =
-    {}
-
-
-init : ( Model, Cmd Msg )
-init =
-    ( {}
+init : Settings -> ( Model, Cmd Msg )
+init settings =
+    ( { settings = settings
+      , mode = Hours
+      , hoursSelected = settings.hours
+      , minutesSelected = settings.minutes
+      }
     , Cmd.none
     )
 
@@ -224,17 +239,70 @@ outerNumbers =
     [ 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
 
 
+doubleDigitFormat : Int -> String
+doubleDigitFormat number =
+    if number < 10 then
+        "0" ++ toString number
+    else
+        toString number
+
+
+numbersDisplay : Mode -> Int -> Int -> Html Msg
+numbersDisplay mode hours minutes =
+    div [ Html.Attributes.class "time-display-numbers" ]
+        [ (numberDisplay (mode == Hours) hours)
+        , span [] [ text ":" ]
+        , (numberDisplay (mode == Minutes) minutes)
+        ]
+
+
+numberDisplay : Bool -> Int -> Html Msg
+numberDisplay isActive value =
+    case isActive of
+        True ->
+            span [ Html.Attributes.class "number" ] [ text <| doubleDigitFormat value ]
+
+        False ->
+            span [ Html.Attributes.class "number", Html.Attributes.style [ ( "opacity", "0.7" ) ] ]
+                [ text <| doubleDigitFormat value ]
+
+
+timeDisplay24h : Mode -> Int -> Int -> Html Msg
+timeDisplay24h mode hours minutes =
+    div [ Html.Attributes.class "time-display-numbers-container" ]
+        [ div [ Html.Attributes.class "side-filler" ] []
+        , (numbersDisplay mode hours minutes)
+        , div [ Html.Attributes.class "side-filler" ] []
+        ]
+
+
+timeDisplay12h : Mode -> Int -> Int -> Html Msg
+timeDisplay12h mode hours minutes =
+    div [ Html.Attributes.class "time-display-numbers-container" ]
+        [ div [ Html.Attributes.class "side-filler" ] []
+        , (numbersDisplay mode hours minutes)
+        , div [ Html.Attributes.class "time-periods" ]
+            [ div [ Html.Attributes.class "pm" ] [ text "PM" ]
+            , div [ Html.Attributes.class "am" ] [ text "AM" ]
+            ]
+        ]
+
+
+timeDisplay : Bool -> Mode -> Int -> Int -> Html Msg
+timeDisplay is24Hours =
+    case is24Hours of
+        True ->
+            timeDisplay24h
+
+        False ->
+            timeDisplay12h
+
+
 view : Model -> Html Msg
 view model =
     div [ Html.Attributes.class "time-picker" ]
         [ div [ Html.Attributes.class "time-display" ]
-            [ div [ Html.Attributes.class "time-display-numbers-container" ]
-                [ div [ Html.Attributes.class "time-display-numbers" ]
-                    [ span [ Html.Attributes.class "number" ] [ text "22" ]
-                    , span [] [ text ":" ]
-                    , span [ Html.Attributes.class "number", Html.Attributes.style [ ( "opacity", "0.7" ) ] ] [ text "19" ]
-                    ]
-                ]
+            [ timeDisplay model.settings.is24Hours model.mode model.hoursSelected model.minutesSelected
             ]
         , div [ Html.Attributes.class "time-picker-clock-face" ]
             [ div [ Html.Attributes.class "clock-face-background" ] []
@@ -244,9 +312,26 @@ view model =
                 , onMouseDown MouseDown
                 , onMouseUp MouseUp
                 ]
-                ((hoursView24h 3) ++ [ div [ Html.Attributes.class "filler" ] [] ])
+                ((clockFace model.settings.is24Hours model.mode model.hoursSelected model.minutesSelected)
+                    ++ [ div [ Html.Attributes.class "filler" ] [] ]
+                )
             ]
         ]
+
+
+clockFace : Bool -> Mode -> Int -> Int -> List (Html Msg)
+clockFace is24Hours mode hours minutes =
+    case mode of
+        Hours ->
+            case is24Hours of
+                True ->
+                    hoursView24h hours
+
+                False ->
+                    hoursView12h hours
+
+        Minutes ->
+            minutesView minutes
 
 
 minutesView : Int -> List (Html Msg)

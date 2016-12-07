@@ -24,11 +24,39 @@
             justify-content: center;
             align-items: baseline;
 
+            .side-filler {
+                flex: 1 1 0%;
+                position: relative;
+                line-height: 17px;
+                height: 17px;
+                font-size: 17px;
+            }
+
             .time-display-numbers {
                 margin: 0px 10px;
 
                 .number {
                     cursor: pointer;
+                }
+            }
+
+            .time-periods {
+                flex: 1 1 0%;
+                position: relative;
+                line-height: 17px;
+                height: 17px;
+                font-size: 17px;
+
+                .pm {
+                    cursor: pointer;
+                }
+
+                .am {
+                    position: absolute;
+                    top: -20px;
+                    left: 0px;
+                    cursor: pointer;
+                    opacity: 0.7;
                 }
             }
         }

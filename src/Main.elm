@@ -9,12 +9,6 @@ type alias Model =
     }
 
 
-emptyModel : Model
-emptyModel =
-    { timePickerModel = TimePicker.emptyModel
-    }
-
-
 main : Program Never Model Msg
 main =
     Html.program
@@ -27,7 +21,19 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( emptyModel, Cmd.none )
+    let
+        ( timePickerModel, timePickerCmd ) =
+            TimePicker.init
+                { is24Hours = True
+                , hours = 11
+                , minutes = 23
+                }
+    in
+        ( { timePickerModel =
+                timePickerModel
+          }
+        , Cmd.map TimePickerMsg timePickerCmd
+        )
 
 
 view : Model -> Html.Html Msg
