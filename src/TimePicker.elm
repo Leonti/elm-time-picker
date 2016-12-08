@@ -32,6 +32,11 @@ type alias Settings =
     }
 
 
+type TimePeriod
+    = AM
+    | PM
+
+
 outerPositions : List Position
 outerPositions =
     [ Position 0 5
@@ -102,7 +107,7 @@ type alias Model =
 init : Settings -> ( Model, Cmd Msg )
 init settings =
     ( { settings = settings
-      , mode = Hours
+      , mode = Minutes
       , hoursSelected = settings.hours
       , minutesSelected = settings.minutes
       }
@@ -280,12 +285,46 @@ timeDisplay12h : Mode -> Int -> Int -> Html Msg
 timeDisplay12h mode hours minutes =
     div [ Html.Attributes.class "time-display-numbers-container" ]
         [ div [ Html.Attributes.class "side-filler" ] []
-        , (numbersDisplay mode hours minutes)
+        , (numbersDisplay mode (toAmHours hours) minutes)
         , div [ Html.Attributes.class "time-periods" ]
-            [ div [ Html.Attributes.class "pm" ] [ text "PM" ]
-            , div [ Html.Attributes.class "am" ] [ text "AM" ]
+            [ div [ Html.Attributes.class <| periodClass PM hours ] [ text "PM" ]
+            , div [ Html.Attributes.class <| periodClass AM hours ] [ text "AM" ]
             ]
         ]
+
+
+toAmHours : Int -> Int
+toAmHours hours =
+    if hours == 0 then
+        12
+    else if isAm hours then
+        hours
+    else
+        hours - 12
+
+
+periodClass : TimePeriod -> Int -> String
+periodClass timePeriod hours =
+    case timePeriod of
+        AM ->
+            if isAm hours then
+                "am"
+            else
+                "am inactive"
+
+        PM ->
+            if isAm hours then
+                "pm inactive"
+            else
+                "pm"
+
+
+isAm : Int -> Bool
+isAm hours =
+    if hours >= 0 && hours < 12 then
+        True
+    else
+        False
 
 
 timeDisplay : Bool -> Mode -> Int -> Int -> Html Msg
@@ -336,17 +375,18 @@ clockFace is24Hours mode hours minutes =
 
 minutesView : Int -> List (Html Msg)
 minutesView selected =
-    pointerView False (pointerAngle60 selected) :: (outerNumbersView minutes)
+    pointerView False (pointerAngle60 selected) :: (outerNumbersView minutes selected)
 
 
 hoursView12h : Int -> List (Html Msg)
 hoursView12h selected =
-    pointerView False (pointerAngle12 selected) :: (outerNumbersView hoursOuter)
+    pointerView False (pointerAngle12 selected) :: (outerNumbersView hoursOuter (toAmHours selected))
 
 
 hoursView24h : Int -> List (Html Msg)
 hoursView24h selected =
-    (pointerView False (pointerAngle12 selected)) :: ((outerNumbersView hoursOuter) ++ (innerNumbersView hoursInner))
+    (pointerView False (pointerAngle12 selected))
+        :: ((outerNumbersView hoursOuter selected) ++ (innerNumbersView hoursInner selected))
 
 
 pointerAngle12 : Int -> Float
@@ -383,14 +423,22 @@ pointerView isInner angle =
             [ div [ Html.Attributes.class "arrow" ] [] ]
 
 
-outerNumbersView : List Int -> List (Html Msg)
-outerNumbersView numbers =
-    List.map2 (\number position -> numberView "number-outer" number position) numbers outerPositions
+outerNumbersView : List Int -> Int -> List (Html Msg)
+outerNumbersView numbers selectedNumber =
+    List.map2 (numberViewWrapper selectedNumber "number-outer") numbers outerPositions
 
 
-innerNumbersView : List Int -> List (Html Msg)
-innerNumbersView numbers =
-    List.map2 (\number position -> numberView "number-inner" number position) numbers innerPositions
+innerNumbersView : List Int -> Int -> List (Html Msg)
+innerNumbersView numbers selectedNumber =
+    List.map2 (numberViewWrapper selectedNumber "number-inner") numbers innerPositions
+
+
+numberViewWrapper : Int -> String -> Int -> Position -> Html Msg
+numberViewWrapper selectedNumber spanClass number position =
+    if selectedNumber == number then
+        numberView (spanClass ++ " number-selected") number position
+    else
+        numberView spanClass number position
 
 
 numberView : String -> Int -> Position -> Html Msg

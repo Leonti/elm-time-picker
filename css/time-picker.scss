@@ -56,6 +56,9 @@
                     top: -20px;
                     left: 0px;
                     cursor: pointer;
+                }
+
+                .inactive {
                     opacity: 0.7;
                 }
             }
@@ -127,6 +130,7 @@
 
             .number-selected {
                 background-color: rgb(0, 188, 212);
+                color: rgb(255, 255, 255);
             }
 
             .number-inner {
