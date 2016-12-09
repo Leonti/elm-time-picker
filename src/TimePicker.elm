@@ -111,7 +111,7 @@ type alias Model =
 init : Settings -> ( Model, Cmd Msg )
 init settings =
     ( { settings = settings
-      , mode = Minutes
+      , mode = Hours
       , hoursSelected = settings.hours
       , minutesSelected = settings.minutes
       , isSelecting = False
@@ -123,6 +123,7 @@ init settings =
 type Msg
     = Noop
     | ModeSwitch Mode
+    | TimePeriodSwitch TimePeriod
     | MouseDown Offset
     | MouseMove Offset
     | MouseUp Offset
@@ -158,6 +159,14 @@ update msg model =
         ModeSwitch mode ->
             ( { model | mode = mode }, Cmd.none )
 
+        TimePeriodSwitch timePeriod ->
+            case timePeriod of
+                AM ->
+                    ( { model | hoursSelected = toAmHours model.hoursSelected }, Cmd.none )
+
+                PM ->
+                    ( { model | hoursSelected = toPmHours model.hoursSelected }, Cmd.none )
+
 
 applySelection : Model -> Selection -> Model
 applySelection model selection =
@@ -183,7 +192,7 @@ applySelection model selection =
                     applySelection24h model selection
 
                 False ->
-                    model
+                    applySelection12h model selection
 
 
 applySelection24h : Model -> Selection -> Model
@@ -212,6 +221,40 @@ applySelection24h model selection =
 
                     Nothing ->
                         model
+
+
+applySelection12h : Model -> Selection -> Model
+applySelection12h model selection =
+    let
+        maybeHour =
+            List.head (List.drop selection.angle hoursOuter)
+    in
+        case maybeHour of
+            Just selectedHour ->
+                if isAm model.hoursSelected then
+                    let
+                        adjustedHour =
+                            if selectedHour == 12 then
+                                0
+                            else
+                                selectedHour
+                    in
+                        { model | hoursSelected = adjustedHour }
+                else
+                    let
+                        pmHour =
+                            (Debug.log "selected hour" selectedHour) + 12
+
+                        adjustedPmHour =
+                            if pmHour == 24 then
+                                12
+                            else
+                                pmHour
+                    in
+                        { model | hoursSelected = adjustedPmHour }
+
+            Nothing ->
+                model
 
 
 center : Position
@@ -367,8 +410,16 @@ timeDisplay12h mode hours minutes =
         [ div [ Html.Attributes.class "side-filler" ] []
         , (numbersDisplay mode (toAmHours hours) minutes)
         , div [ Html.Attributes.class "time-periods" ]
-            [ div [ Html.Attributes.class <| periodClass PM hours ] [ text "PM" ]
-            , div [ Html.Attributes.class <| periodClass AM hours ] [ text "AM" ]
+            [ div
+                [ Html.Attributes.class <| periodClass PM hours
+                , onClick <| TimePeriodSwitch PM
+                ]
+                [ text "PM" ]
+            , div
+                [ Html.Attributes.class <| periodClass AM hours
+                , onClick <| TimePeriodSwitch AM
+                ]
+                [ text "AM" ]
             ]
         ]
 
@@ -381,6 +432,14 @@ toAmHours hours =
         hours
     else
         hours - 12
+
+
+toPmHours : Int -> Int
+toPmHours hours =
+    if isAm hours then
+        hours + 12
+    else
+        hours
 
 
 periodClass : TimePeriod -> Int -> String
@@ -521,6 +580,8 @@ innerNumbersView numbers selectedNumber =
 numberViewWrapper : Int -> String -> Int -> Position -> Html Msg
 numberViewWrapper selectedNumber spanClass number position =
     if selectedNumber == number then
+        numberView (spanClass ++ " number-selected") number position
+    else if selectedNumber == 0 && number == 12 then
         numberView (spanClass ++ " number-selected") number position
     else
         numberView spanClass number position
