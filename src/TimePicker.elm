@@ -2,9 +2,12 @@ module TimePicker exposing (Model, Msg, init, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import MousePosition exposing (..)
 
 
+--import Array
+-- Array get Array.fromList
 --import Html.Events exposing (..)
 
 
@@ -86,14 +89,14 @@ hoursInner =
     0 :: (List.range 13 23)
 
 
-minuteStep : Int
-minuteStep =
-    6
+modeToStep : Mode -> Int
+modeToStep mode =
+    case mode of
+        Hours ->
+            30
 
-
-hourStep : Int
-hourStep =
-    30
+        Minutes ->
+            6
 
 
 type alias Model =
@@ -101,6 +104,7 @@ type alias Model =
     , mode : Mode
     , hoursSelected : Int
     , minutesSelected : Int
+    , isSelecting : Bool
     }
 
 
@@ -110,6 +114,7 @@ init settings =
       , mode = Minutes
       , hoursSelected = settings.hours
       , minutesSelected = settings.minutes
+      , isSelecting = False
       }
     , Cmd.none
     )
@@ -117,6 +122,7 @@ init settings =
 
 type Msg
     = Noop
+    | ModeSwitch Mode
     | MouseDown Offset
     | MouseMove Offset
     | MouseUp Offset
@@ -129,17 +135,83 @@ update msg model =
             ( model, Cmd.none )
 
         MouseDown offset ->
-            ( model, Cmd.none )
+            let
+                modelWithSelection =
+                    applySelection model <|
+                        offsetToSelection offset (modeToStep model.mode)
+            in
+                ( { modelWithSelection | isSelecting = True }, Cmd.none )
 
         MouseMove offset ->
-            let
-                selection =
-                    Debug.log "selection" <| offsetToSelection offset hourStep
-            in
+            if model.isSelecting == True then
+                let
+                    selection =
+                        offsetToSelection offset (modeToStep model.mode)
+                in
+                    ( applySelection model selection, Cmd.none )
+            else
                 ( model, Cmd.none )
 
         MouseUp offset ->
-            ( model, Cmd.none )
+            ( { model | isSelecting = False }, Cmd.none )
+
+        ModeSwitch mode ->
+            ( { model | mode = mode }, Cmd.none )
+
+
+applySelection : Model -> Selection -> Model
+applySelection model selection =
+    case model.mode of
+        Minutes ->
+            let
+                minutesRange =
+                    List.range 0 59
+
+                maybeMinute =
+                    List.head (List.drop selection.angle minutesRange)
+            in
+                case maybeMinute of
+                    Just selectedMinute ->
+                        { model | minutesSelected = selectedMinute }
+
+                    Nothing ->
+                        model
+
+        Hours ->
+            case model.settings.is24Hours of
+                True ->
+                    applySelection24h model selection
+
+                False ->
+                    model
+
+
+applySelection24h : Model -> Selection -> Model
+applySelection24h model selection =
+    case selection.isInner of
+        True ->
+            let
+                maybeHour =
+                    List.head (List.drop selection.angle hoursInner)
+            in
+                case maybeHour of
+                    Just selectedHour ->
+                        { model | hoursSelected = selectedHour }
+
+                    Nothing ->
+                        model
+
+        False ->
+            let
+                maybeHour =
+                    List.head (List.drop selection.angle hoursOuter)
+            in
+                case maybeHour of
+                    Just selectedHour ->
+                        { model | hoursSelected = selectedHour }
+
+                    Nothing ->
+                        model
 
 
 center : Position
@@ -255,20 +327,28 @@ doubleDigitFormat number =
 numbersDisplay : Mode -> Int -> Int -> Html Msg
 numbersDisplay mode hours minutes =
     div [ Html.Attributes.class "time-display-numbers" ]
-        [ (numberDisplay (mode == Hours) hours)
+        [ (numberDisplay (mode == Hours) hours Hours)
         , span [] [ text ":" ]
-        , (numberDisplay (mode == Minutes) minutes)
+        , (numberDisplay (mode == Minutes) minutes Minutes)
         ]
 
 
-numberDisplay : Bool -> Int -> Html Msg
-numberDisplay isActive value =
+numberDisplay : Bool -> Int -> Mode -> Html Msg
+numberDisplay isActive value otherMode =
     case isActive of
         True ->
-            span [ Html.Attributes.class "number" ] [ text <| doubleDigitFormat value ]
+            span
+                [ Html.Attributes.class "number"
+                , onClick <| ModeSwitch otherMode
+                ]
+                [ text <| doubleDigitFormat value ]
 
         False ->
-            span [ Html.Attributes.class "number", Html.Attributes.style [ ( "opacity", "0.7" ) ] ]
+            span
+                [ Html.Attributes.class "number"
+                , Html.Attributes.style [ ( "opacity", "0.7" ) ]
+                , onClick <| ModeSwitch otherMode
+                ]
                 [ text <| doubleDigitFormat value ]
 
 
@@ -385,8 +465,13 @@ hoursView12h selected =
 
 hoursView24h : Int -> List (Html Msg)
 hoursView24h selected =
-    (pointerView False (pointerAngle12 selected))
+    (pointerView (isInnerSelected selected) (pointerAngle12 selected))
         :: ((outerNumbersView hoursOuter selected) ++ (innerNumbersView hoursInner selected))
+
+
+isInnerSelected : Int -> Bool
+isInnerSelected selected =
+    List.member selected hoursInner
 
 
 pointerAngle12 : Int -> Float
@@ -409,7 +494,7 @@ pointerView isInner angle =
     let
         height =
             if isInner then
-                "30"
+                "27"
             else
                 "40"
     in

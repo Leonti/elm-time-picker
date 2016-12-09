@@ -24,7 +24,7 @@ init =
     let
         ( timePickerModel, timePickerCmd ) =
             TimePicker.init
-                { is24Hours = False
+                { is24Hours = True
                 , hours = 13
                 , minutes = 25
                 }
