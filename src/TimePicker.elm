@@ -154,7 +154,17 @@ update msg model =
                 ( model, Cmd.none )
 
         MouseUp offset ->
-            ( { model | isSelecting = False }, Cmd.none )
+            case model.mode of
+                Hours ->
+                    ( { model
+                        | isSelecting = False
+                        , mode = Minutes
+                      }
+                    , Cmd.none
+                    )
+
+                Minutes ->
+                    ( { model | isSelecting = False }, Cmd.none )
 
         ModeSwitch mode ->
             ( { model | mode = mode }, Cmd.none )
