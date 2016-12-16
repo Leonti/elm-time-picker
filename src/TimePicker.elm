@@ -1,14 +1,9 @@
-module TimePicker exposing (Model, Msg, init, update, view)
+module TimePicker exposing (Model, Msg, init, update, view, calculateModel, Mode(..), TimePeriod(..))
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import MousePosition exposing (..)
-
-
---import Array
--- Array get Array.fromList
---import Html.Events exposing (..)
 
 
 type alias Position =
@@ -108,6 +103,17 @@ type alias Model =
     }
 
 
+type alias CalculatedModel =
+    { outerNumbers : List String
+    , innerNumbers : Maybe (List String)
+    , digitalTimeHours : String
+    , digitalTimeMinutes : String
+    , digitalTimeSelected : Mode
+    , timePeriodSelected : TimePeriod
+    , timePeriodShown : Bool
+    }
+
+
 init : Settings -> ( Model, Cmd Msg )
 init settings =
     ( { settings = settings
@@ -118,6 +124,51 @@ init settings =
       }
     , Cmd.none
     )
+
+
+calculateModel : Model -> CalculatedModel
+calculateModel model =
+    { outerNumbers = outerNumbersToDisplay model.mode model.settings.is24Hours
+    , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
+    , digitalTimeHours = ""
+    , digitalTimeMinutes = ""
+    , digitalTimeSelected = Hours
+    , timePeriodSelected = AM
+    , timePeriodShown = not model.settings.is24Hours
+    }
+
+
+outerNumbersToDisplay : Mode -> Bool -> List String
+outerNumbersToDisplay mode is24Hours =
+    case mode of
+        Hours ->
+            List.map toDoubleZeroString <| 12 :: (List.range 1 11)
+
+        Minutes ->
+            List.map toDoubleZeroString <| List.map (\x -> x * 5) <| List.range 0 11
+
+
+innerNumbersToDisplay : Mode -> Bool -> Maybe (List String)
+innerNumbersToDisplay mode is24Hours =
+    case mode of
+        Hours ->
+            case is24Hours of
+                True ->
+                    Just <| List.map toDoubleZeroString <| 0 :: (List.range 13 23)
+
+                False ->
+                    Nothing
+
+        Minutes ->
+            Nothing
+
+
+toDoubleZeroString : Int -> String
+toDoubleZeroString number =
+    if number == 0 then
+        "00"
+    else
+        toString number
 
 
 type Msg
@@ -167,7 +218,11 @@ update msg model =
                     ( { model | isSelecting = False }, Cmd.none )
 
         ModeSwitch mode ->
-            ( { model | mode = mode }, Cmd.none )
+            ( { model
+                | mode = mode
+              }
+            , Cmd.none
+            )
 
         TimePeriodSwitch timePeriod ->
             case timePeriod of
@@ -253,7 +308,7 @@ applySelection12h model selection =
                 else
                     let
                         pmHour =
-                            (Debug.log "selected hour" selectedHour) + 12
+                            selectedHour + 12
 
                         adjustedPmHour =
                             if pmHour == 24 then
