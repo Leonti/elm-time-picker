@@ -1,8 +1,10 @@
 sudo: false
 
+language: node_js
+
 cache:
   directories:
-    - test/elm-stuff/build-artifacts
+    - tests/elm-stuff/build-artifacts
     - sysconfcpus
 
 os:
