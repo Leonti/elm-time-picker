@@ -39,6 +39,4 @@ install:
   - cd ../
 
 script:
-  - ls
-  - elm-test -h
   - elm-test
