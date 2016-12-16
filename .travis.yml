@@ -38,4 +38,5 @@ install:
   - elm package install --yes
 
 script:
-- elm-test
+  - ls
+  - elm-test
