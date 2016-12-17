@@ -9,6 +9,7 @@ all : Test
 all =
     describe "CalculatedModel"
         [ tests24Hours
+        , tests12Hours
         , testsDigitalTimeHours24h
         , testsDigitalTimeHours12h
         , testsDigitalTimeMinutes
@@ -25,10 +26,35 @@ tests24Hours =
         describe "24 hours initialModel"
             [ test "Outer numbers should be correct" <|
                 \() ->
-                    Expect.equal calculatedModel.outerNumbers [ "12", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" ]
+                    Expect.equal calculatedModel.outerNumbers
+                        [ "12", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" ]
+            , test "Inner numbers should be correct" <|
+                \() ->
+                    Expect.equal calculatedModel.innerNumbers <|
+                        Just [ "00", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23" ]
             , test "Time periods should not be shown" <|
                 \() ->
                     Expect.equal calculatedModel.timePeriodShown False
+            ]
+
+
+tests12Hours : Test
+tests12Hours =
+    let
+        calculatedModel =
+            TimePicker.calculateModel <| initialModel False 13 25
+    in
+        describe "12 hours initialModel"
+            [ test "Outer numbers should be correct" <|
+                \() ->
+                    Expect.equal calculatedModel.outerNumbers
+                        [ "12", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" ]
+            , test "Inner numbers should not be shown" <|
+                \() ->
+                    Expect.equal calculatedModel.innerNumbers Nothing
+            , test "Time periods should be shown" <|
+                \() ->
+                    Expect.equal calculatedModel.timePeriodShown True
             ]
 
 
