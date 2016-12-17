@@ -130,12 +130,20 @@ calculateModel : Model -> CalculatedModel
 calculateModel model =
     { outerNumbers = outerNumbersToDisplay model.mode model.settings.is24Hours
     , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
-    , digitalTimeHours = ""
+    , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
     , digitalTimeMinutes = ""
     , digitalTimeSelected = Hours
     , timePeriodSelected = AM
     , timePeriodShown = not model.settings.is24Hours
     }
+
+
+digitalTimeHoursToDisplay : Bool -> Int -> String
+digitalTimeHoursToDisplay is24Hours hours =
+    if is24Hours then
+        doubleDigitFormat hours
+    else
+        doubleDigitFormat <| toAmHours hours
 
 
 outerNumbersToDisplay : Mode -> Bool -> List String
@@ -491,7 +499,7 @@ timeDisplay12h mode hours minutes =
 
 toAmHours : Int -> Int
 toAmHours hours =
-    if hours == 0 then
+    if hours == 0 || hours == 12 then
         12
     else if isAm hours then
         hours
