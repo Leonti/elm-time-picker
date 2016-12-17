@@ -10,6 +10,7 @@ all =
     describe "CalculatedModel"
         [ tests24Hours
         , tests12Hours
+        , testsMinutes
         , testsDigitalTimeHours24h
         , testsDigitalTimeHours12h
         , testsDigitalTimeMinutes
@@ -35,6 +36,9 @@ tests24Hours =
             , test "Time periods should not be shown" <|
                 \() ->
                     Expect.equal calculatedModel.timePeriodShown False
+            , test "Mode should be Hours" <|
+                \() ->
+                    Expect.equal calculatedModel.mode TimePicker.Hours
             ]
 
 
@@ -55,6 +59,35 @@ tests12Hours =
             , test "Time periods should be shown" <|
                 \() ->
                     Expect.equal calculatedModel.timePeriodShown True
+            , test "Mode should be Hours" <|
+                \() ->
+                    Expect.equal calculatedModel.mode TimePicker.Hours
+            ]
+
+
+testsMinutes : Test
+testsMinutes =
+    let
+        model =
+            initialModel False 13 25
+
+        calculatedModel =
+            TimePicker.calculateModel <| { model | mode = TimePicker.Minutes }
+    in
+        describe "minutes view"
+            [ test "Outer numbers should be correct" <|
+                \() ->
+                    Expect.equal calculatedModel.outerNumbers
+                        [ "00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55" ]
+            , test "Inner numbers should not be shown" <|
+                \() ->
+                    Expect.equal calculatedModel.innerNumbers Nothing
+            , test "Time periods should be shown" <|
+                \() ->
+                    Expect.equal calculatedModel.timePeriodShown True
+            , test "Mode should be Hours" <|
+                \() ->
+                    Expect.equal calculatedModel.mode TimePicker.Minutes
             ]
 
 

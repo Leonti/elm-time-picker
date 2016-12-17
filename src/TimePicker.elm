@@ -108,7 +108,7 @@ type alias CalculatedModel =
     , innerNumbers : Maybe (List String)
     , digitalTimeHours : String
     , digitalTimeMinutes : String
-    , digitalTimeSelected : Mode
+    , mode : Mode
     , timePeriodSelected : TimePeriod
     , timePeriodShown : Bool
     }
@@ -132,7 +132,7 @@ calculateModel model =
     , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
     , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
     , digitalTimeMinutes = doubleDigitFormat model.minutesSelected
-    , digitalTimeSelected = Hours
+    , mode = model.mode
     , timePeriodSelected = hoursToTimePeriod model.hoursSelected
     , timePeriodShown = not model.settings.is24Hours
     }
@@ -153,7 +153,7 @@ outerNumbersToDisplay mode is24Hours =
             List.map toDoubleZeroString <| 12 :: (List.range 1 11)
 
         Minutes ->
-            List.map toDoubleZeroString <| List.map (\x -> x * 5) <| List.range 0 11
+            List.map doubleDigitFormat <| List.map (\x -> x * 5) <| List.range 0 11
 
 
 innerNumbersToDisplay : Mode -> Bool -> Maybe (List String)
