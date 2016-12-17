@@ -11,6 +11,7 @@ all =
         [ tests24Hours
         , testsDigitalTimeHours24h
         , testsDigitalTimeHours12h
+        , testsDigitalTimeMinutes
         ]
 
 
@@ -98,6 +99,26 @@ testsDigitalTimeHours12h =
                         TimePicker.calculateModel <| initialModel False 13 25
                 in
                     Expect.equal calculatedModel.digitalTimeHours "01"
+        ]
+
+
+testsDigitalTimeMinutes : Test
+testsDigitalTimeMinutes =
+    describe "Digital time minutes display"
+        [ test "0 minutes should be shown as \"00\"" <|
+            \() ->
+                let
+                    calculatedModel =
+                        TimePicker.calculateModel <| initialModel False 0 0
+                in
+                    Expect.equal calculatedModel.digitalTimeMinutes "00"
+        , test "minutes less than 10 should have 0 prepended" <|
+            \() ->
+                let
+                    calculatedModel =
+                        TimePicker.calculateModel <| initialModel False 0 5
+                in
+                    Expect.equal calculatedModel.digitalTimeMinutes "05"
         ]
 
 
