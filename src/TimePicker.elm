@@ -133,7 +133,7 @@ calculateModel model =
     , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
     , digitalTimeMinutes = doubleDigitFormat model.minutesSelected
     , digitalTimeSelected = Hours
-    , timePeriodSelected = AM
+    , timePeriodSelected = hoursToTimePeriod model.hoursSelected
     , timePeriodShown = not model.settings.is24Hours
     }
 
@@ -529,6 +529,14 @@ periodClass timePeriod hours =
                 "pm inactive"
             else
                 "pm"
+
+
+hoursToTimePeriod : Int -> TimePeriod
+hoursToTimePeriod hours =
+    if hours >= 0 && hours < 12 then
+        AM
+    else
+        PM
 
 
 isAm : Int -> Bool

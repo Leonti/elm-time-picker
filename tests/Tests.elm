@@ -12,6 +12,7 @@ all =
         , testsDigitalTimeHours24h
         , testsDigitalTimeHours12h
         , testsDigitalTimeMinutes
+        , testsSelectedTimePeriod
         ]
 
 
@@ -22,10 +23,7 @@ tests24Hours =
             TimePicker.calculateModel <| initialModel True 13 25
     in
         describe "24 hours initialModel"
-            [ test "Time perios should be hidden" <|
-                \() ->
-                    Expect.equal calculatedModel.timePeriodSelected TimePicker.AM
-            , test "Outer numbers should be correct" <|
+            [ test "Outer numbers should be correct" <|
                 \() ->
                     Expect.equal calculatedModel.outerNumbers [ "12", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" ]
             , test "Time periods should not be shown" <|
@@ -119,6 +117,40 @@ testsDigitalTimeMinutes =
                         TimePicker.calculateModel <| initialModel False 0 5
                 in
                     Expect.equal calculatedModel.digitalTimeMinutes "05"
+        ]
+
+
+testsSelectedTimePeriod : Test
+testsSelectedTimePeriod =
+    describe "Selected time period"
+        [ test "0 hours should be AM" <|
+            \() ->
+                let
+                    calculatedModel =
+                        TimePicker.calculateModel <| initialModel False 0 0
+                in
+                    Expect.equal calculatedModel.timePeriodSelected TimePicker.AM
+        , test "12 hours should be PM" <|
+            \() ->
+                let
+                    calculatedModel =
+                        TimePicker.calculateModel <| initialModel False 12 0
+                in
+                    Expect.equal calculatedModel.timePeriodSelected TimePicker.PM
+        , test "7 hours should be AM" <|
+            \() ->
+                let
+                    calculatedModel =
+                        TimePicker.calculateModel <| initialModel False 7 0
+                in
+                    Expect.equal calculatedModel.timePeriodSelected TimePicker.AM
+        , test "13 hours should be PM" <|
+            \() ->
+                let
+                    calculatedModel =
+                        TimePicker.calculateModel <| initialModel False 13 0
+                in
+                    Expect.equal calculatedModel.timePeriodSelected TimePicker.PM
         ]
 
 
