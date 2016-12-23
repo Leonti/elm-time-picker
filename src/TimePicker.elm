@@ -106,6 +106,9 @@ type alias Model =
 type alias CalculatedModel =
     { outerNumbers : List String
     , innerNumbers : Maybe (List String)
+    , pointerAngle : Int
+    , isShortPointer : Bool
+    , selectedNumber : String
     , digitalTimeHours : String
     , digitalTimeMinutes : String
     , mode : Mode
@@ -130,6 +133,9 @@ calculateModel : Model -> CalculatedModel
 calculateModel model =
     { outerNumbers = outerNumbersToDisplay model.mode model.settings.is24Hours
     , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
+    , pointerAngle = 0
+    , isShortPointer = (model.mode == Hours && model.settings.is24Hours) && isInnerSelected model.hoursSelected
+    , selectedNumber = ""
     , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
     , digitalTimeMinutes = doubleDigitFormat model.minutesSelected
     , mode = model.mode

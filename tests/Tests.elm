@@ -3,6 +3,7 @@ module Tests exposing (..)
 import Test exposing (..)
 import Expect
 import TimePicker
+import PointerTests
 
 
 all : Test
@@ -15,6 +16,7 @@ all =
         , testsDigitalTimeHours12h
         , testsDigitalTimeMinutes
         , testsSelectedTimePeriod
+        , PointerTests.testsPointerLength
         ]
 
 
