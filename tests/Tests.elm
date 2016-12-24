@@ -3,7 +3,9 @@ module Tests exposing (..)
 import Test exposing (..)
 import Expect
 import TimePicker
+import TestUtils exposing (..)
 import PointerTests
+import SelectedNumberTests
 
 
 all : Test
@@ -17,6 +19,7 @@ all =
         , testsDigitalTimeMinutes
         , testsSelectedTimePeriod
         , PointerTests.testsPointerLength
+        , SelectedNumberTests.testsSelectedNumber
         ]
 
 
@@ -213,16 +216,3 @@ testsSelectedTimePeriod =
                 in
                     Expect.equal calculatedModel.timePeriodSelected TimePicker.PM
         ]
-
-
-initialModel : Bool -> Int -> Int -> TimePicker.Model
-initialModel is24Hours hours minutes =
-    let
-        ( timePickerModel, timePickerCmd ) =
-            TimePicker.init
-                { is24Hours = is24Hours
-                , hours = hours
-                , minutes = minutes
-                }
-    in
-        timePickerModel

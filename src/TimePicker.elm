@@ -135,7 +135,7 @@ calculateModel model =
     , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
     , pointerAngle = 0
     , isShortPointer = (model.mode == Hours && model.settings.is24Hours) && isInnerSelected model.hoursSelected
-    , selectedNumber = ""
+    , selectedNumber = toSelectedNumber model.mode model.settings.is24Hours model.hoursSelected model.minutesSelected
     , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
     , digitalTimeMinutes = doubleDigitFormat model.minutesSelected
     , mode = model.mode
@@ -150,6 +150,19 @@ digitalTimeHoursToDisplay is24Hours hours =
         doubleDigitFormat hours
     else
         doubleDigitFormat <| toAmHours hours
+
+
+toSelectedNumber : Mode -> Bool -> Int -> Int -> String
+toSelectedNumber mode is24Hours hours minutes =
+    case mode of
+        Hours ->
+            if is24Hours then
+                toDoubleZeroString hours
+            else
+                toDoubleZeroString <| toAmHours hours
+
+        Minutes ->
+            toDoubleZeroString minutes
 
 
 outerNumbersToDisplay : Mode -> Bool -> List String
