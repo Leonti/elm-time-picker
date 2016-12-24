@@ -133,7 +133,7 @@ calculateModel : Model -> CalculatedModel
 calculateModel model =
     { outerNumbers = outerNumbersToDisplay model.mode model.settings.is24Hours
     , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
-    , pointerAngle = 0
+    , pointerAngle = toPointerAngle model.mode model.settings.is24Hours model.hoursSelected model.minutesSelected
     , isShortPointer = (model.mode == Hours && model.settings.is24Hours) && isInnerSelected model.hoursSelected
     , selectedNumber = toSelectedNumber model.mode model.settings.is24Hours model.hoursSelected model.minutesSelected
     , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
@@ -163,6 +163,16 @@ toSelectedNumber mode is24Hours hours minutes =
 
         Minutes ->
             toDoubleZeroString minutes
+
+
+toPointerAngle : Mode -> Bool -> Int -> Int -> Int
+toPointerAngle mode is24Hours hours minutes =
+    case mode of
+        Hours ->
+            pointerAngle12 <| toAmHours hours
+
+        Minutes ->
+            pointerAngle60 minutes
 
 
 outerNumbersToDisplay : Mode -> Bool -> List String
@@ -633,22 +643,29 @@ isInnerSelected selected =
     List.member selected hoursInner
 
 
-pointerAngle12 : Int -> Float
+pointerAngle12 : Int -> Int
 pointerAngle12 =
     pointerAngle 12
 
 
-pointerAngle60 : Int -> Float
+pointerAngle60 : Int -> Int
 pointerAngle60 =
     pointerAngle 60
 
 
-pointerAngle : Int -> Int -> Float
+pointerAngle : Int -> Int -> Int
 pointerAngle base value =
-    (360 / (toFloat base)) * (toFloat value)
+    let
+        angle =
+            round <| (360 / (toFloat base)) * (toFloat value)
+    in
+        if angle == 360 then
+            0
+        else
+            angle
 
 
-pointerView : Bool -> Float -> Html Msg
+pointerView : Bool -> Int -> Html Msg
 pointerView isInner angle =
     let
         height =

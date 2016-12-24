@@ -6,6 +6,7 @@ import TimePicker
 import TestUtils exposing (..)
 import PointerTests
 import SelectedNumberTests
+import PointerAngleTests
 
 
 all : Test
@@ -20,6 +21,7 @@ all =
         , testsSelectedTimePeriod
         , PointerTests.testsPointerLength
         , SelectedNumberTests.testsSelectedNumber
+        , PointerAngleTests.testsPointerAngle
         ]
 
 
