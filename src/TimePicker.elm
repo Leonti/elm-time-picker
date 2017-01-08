@@ -1,9 +1,11 @@
-module TimePicker exposing (Model, Msg, init, update, view, calculateModel, Mode(..), TimePeriod(..))
+module TimePicker exposing (Model, Msg, init, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import MousePosition exposing (..)
+import TimeTypes exposing (..)
+import CalculatedModel exposing (InputModel, CalculatedModel, SelectedTime, toSelectedTime, calculateModel, toAmHours, toPmHours)
 
 
 type alias Position =
@@ -12,27 +14,11 @@ type alias Position =
     }
 
 
-type alias Selection =
-    { angle : Int
-    , isInner : Bool
-    }
-
-
-type Mode
-    = Hours
-    | Minutes
-
-
 type alias Settings =
     { is24Hours : Bool
     , hours : Int
     , minutes : Int
     }
-
-
-type TimePeriod
-    = AM
-    | PM
 
 
 outerPositions : List Position
@@ -69,21 +55,6 @@ innerPositions =
     ]
 
 
-minutes : List Int
-minutes =
-    List.map (\x -> x * 5) <| List.range 0 11
-
-
-hoursOuter : List Int
-hoursOuter =
-    12 :: (List.range 1 11)
-
-
-hoursInner : List Int
-hoursInner =
-    0 :: (List.range 13 23)
-
-
 modeToStep : Mode -> Int
 modeToStep mode =
     case mode of
@@ -103,20 +74,6 @@ type alias Model =
     }
 
 
-type alias CalculatedModel =
-    { outerNumbers : List String
-    , innerNumbers : Maybe (List String)
-    , pointerAngle : Int
-    , isShortPointer : Bool
-    , selectedNumber : String
-    , digitalTimeHours : String
-    , digitalTimeMinutes : String
-    , mode : Mode
-    , timePeriodSelected : TimePeriod
-    , timePeriodShown : Bool
-    }
-
-
 init : Settings -> ( Model, Cmd Msg )
 init settings =
     ( { settings = settings
@@ -127,85 +84,6 @@ init settings =
       }
     , Cmd.none
     )
-
-
-calculateModel : Model -> CalculatedModel
-calculateModel model =
-    { outerNumbers = outerNumbersToDisplay model.mode model.settings.is24Hours
-    , innerNumbers = innerNumbersToDisplay model.mode model.settings.is24Hours
-    , pointerAngle = toPointerAngle model.mode model.settings.is24Hours model.hoursSelected model.minutesSelected
-    , isShortPointer = (model.mode == Hours && model.settings.is24Hours) && isInnerSelected model.hoursSelected
-    , selectedNumber = toSelectedNumber model.mode model.settings.is24Hours model.hoursSelected model.minutesSelected
-    , digitalTimeHours = digitalTimeHoursToDisplay model.settings.is24Hours model.hoursSelected
-    , digitalTimeMinutes = doubleDigitFormat model.minutesSelected
-    , mode = model.mode
-    , timePeriodSelected = hoursToTimePeriod model.hoursSelected
-    , timePeriodShown = not model.settings.is24Hours
-    }
-
-
-digitalTimeHoursToDisplay : Bool -> Int -> String
-digitalTimeHoursToDisplay is24Hours hours =
-    if is24Hours then
-        doubleDigitFormat hours
-    else
-        doubleDigitFormat <| toAmHours hours
-
-
-toSelectedNumber : Mode -> Bool -> Int -> Int -> String
-toSelectedNumber mode is24Hours hours minutes =
-    case mode of
-        Hours ->
-            if is24Hours then
-                toDoubleZeroString hours
-            else
-                toDoubleZeroString <| toAmHours hours
-
-        Minutes ->
-            toDoubleZeroString minutes
-
-
-toPointerAngle : Mode -> Bool -> Int -> Int -> Int
-toPointerAngle mode is24Hours hours minutes =
-    case mode of
-        Hours ->
-            pointerAngle12 <| toAmHours hours
-
-        Minutes ->
-            pointerAngle60 minutes
-
-
-outerNumbersToDisplay : Mode -> Bool -> List String
-outerNumbersToDisplay mode is24Hours =
-    case mode of
-        Hours ->
-            List.map toDoubleZeroString <| 12 :: (List.range 1 11)
-
-        Minutes ->
-            List.map doubleDigitFormat <| List.map (\x -> x * 5) <| List.range 0 11
-
-
-innerNumbersToDisplay : Mode -> Bool -> Maybe (List String)
-innerNumbersToDisplay mode is24Hours =
-    case mode of
-        Hours ->
-            case is24Hours of
-                True ->
-                    Just <| List.map toDoubleZeroString <| 0 :: (List.range 13 23)
-
-                False ->
-                    Nothing
-
-        Minutes ->
-            Nothing
-
-
-toDoubleZeroString : Int -> String
-toDoubleZeroString number =
-    if number == 0 then
-        "00"
-    else
-        toString number
 
 
 type Msg
@@ -272,91 +150,20 @@ update msg model =
 
 applySelection : Model -> Selection -> Model
 applySelection model selection =
-    case model.mode of
-        Minutes ->
-            let
-                minutesRange =
-                    List.range 0 59
-
-                maybeMinute =
-                    List.head (List.drop selection.angle minutesRange)
-            in
-                case maybeMinute of
-                    Just selectedMinute ->
-                        { model | minutesSelected = selectedMinute }
-
-                    Nothing ->
-                        model
-
-        Hours ->
-            case model.settings.is24Hours of
-                True ->
-                    applySelection24h model selection
-
-                False ->
-                    applySelection12h model selection
-
-
-applySelection24h : Model -> Selection -> Model
-applySelection24h model selection =
-    case selection.isInner of
-        True ->
-            let
-                maybeHour =
-                    List.head (List.drop selection.angle hoursInner)
-            in
-                case maybeHour of
-                    Just selectedHour ->
-                        { model | hoursSelected = selectedHour }
-
-                    Nothing ->
-                        model
-
-        False ->
-            let
-                maybeHour =
-                    List.head (List.drop selection.angle hoursOuter)
-            in
-                case maybeHour of
-                    Just selectedHour ->
-                        { model | hoursSelected = selectedHour }
-
-                    Nothing ->
-                        model
-
-
-applySelection12h : Model -> Selection -> Model
-applySelection12h model selection =
     let
-        maybeHour =
-            List.head (List.drop selection.angle hoursOuter)
+        selectedTime =
+            toSelectedTime
+                { is24Hours = model.settings.is24Hours
+                , mode = model.mode
+                , hoursSelected = model.hoursSelected
+                , minutesSelected = model.minutesSelected
+                }
+                selection
     in
-        case maybeHour of
-            Just selectedHour ->
-                if isAm model.hoursSelected then
-                    let
-                        adjustedHour =
-                            if selectedHour == 12 then
-                                0
-                            else
-                                selectedHour
-                    in
-                        { model | hoursSelected = adjustedHour }
-                else
-                    let
-                        pmHour =
-                            selectedHour + 12
-
-                        adjustedPmHour =
-                            if pmHour == 24 then
-                                12
-                            else
-                                pmHour
-                    in
-                        { model | hoursSelected = adjustedPmHour }
-
-            Nothing ->
-                model
+        { model
+            | hoursSelected = selectedTime.hoursSelected
+            , minutesSelected = selectedTime.minutesSelected
+        }
 
 
 center : Position
@@ -461,14 +268,6 @@ outerNumbers =
     [ 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]
 
 
-doubleDigitFormat : Int -> String
-doubleDigitFormat number =
-    if number < 10 then
-        "0" ++ toString number
-    else
-        toString number
-
-
 digitalNumbersDisplay : Mode -> String -> String -> Html Msg
 digitalNumbersDisplay mode hours minutes =
     div [ Html.Attributes.class "time-display-numbers" ]
@@ -526,24 +325,6 @@ timeDisplay12h mode timePeriod hours minutes =
         ]
 
 
-toAmHours : Int -> Int
-toAmHours hours =
-    if hours == 0 || hours == 12 then
-        12
-    else if isAm hours then
-        hours
-    else
-        hours - 12
-
-
-toPmHours : Int -> Int
-toPmHours hours =
-    if isAm hours then
-        hours + 12
-    else
-        hours
-
-
 periodClass : TimePeriod -> TimePeriod -> String
 periodClass timePeriod selectedTimePeriod =
     case timePeriod of
@@ -560,22 +341,6 @@ periodClass timePeriod selectedTimePeriod =
                 "pm"
 
 
-hoursToTimePeriod : Int -> TimePeriod
-hoursToTimePeriod hours =
-    if hours >= 0 && hours < 12 then
-        AM
-    else
-        PM
-
-
-isAm : Int -> Bool
-isAm hours =
-    if hours >= 0 && hours < 12 then
-        True
-    else
-        False
-
-
 digitalTimeView : CalculatedModel -> Html Msg
 digitalTimeView cm =
     case cm.timePeriodShown of
@@ -590,83 +355,42 @@ view : Model -> Html Msg
 view model =
     let
         calculatedModel =
-            calculateModel model
+            calculateModel
+                { is24Hours = model.settings.is24Hours
+                , mode = model.mode
+                , hoursSelected = model.hoursSelected
+                , minutesSelected = model.minutesSelected
+                }
     in
         div [ Html.Attributes.class "time-picker" ]
             [ div [ Html.Attributes.class "time-display" ]
                 [ digitalTimeView calculatedModel
                 ]
-            , div [ Html.Attributes.class "time-picker-clock-face" ]
-                [ div [ Html.Attributes.class "clock-face-background" ] []
-                , div
-                    [ Html.Attributes.class "numbers-container"
-                    , onMouseMove MouseMove
-                    , onMouseDown MouseDown
-                    , onMouseUp MouseUp
-                    ]
-                    ((clockFace model.settings.is24Hours model.mode model.hoursSelected model.minutesSelected)
-                        ++ [ div [ Html.Attributes.class "filler" ] [] ]
-                    )
-                ]
+            , clockFaceView calculatedModel
             ]
 
 
-clockFace : Bool -> Mode -> Int -> Int -> List (Html Msg)
-clockFace is24Hours mode hours minutes =
-    case mode of
-        Hours ->
-            case is24Hours of
-                True ->
-                    hoursView24h hours
-
-                False ->
-                    hoursView12h hours
-
-        Minutes ->
-            minutesView minutes
-
-
-minutesView : Int -> List (Html Msg)
-minutesView selected =
-    pointerView False (pointerAngle60 selected) :: (outerNumbersView minutes selected)
-
-
-hoursView12h : Int -> List (Html Msg)
-hoursView12h selected =
-    pointerView False (pointerAngle12 selected) :: (outerNumbersView hoursOuter (toAmHours selected))
-
-
-hoursView24h : Int -> List (Html Msg)
-hoursView24h selected =
-    (pointerView (isInnerSelected selected) (pointerAngle12 selected))
-        :: ((outerNumbersView hoursOuter selected) ++ (innerNumbersView hoursInner selected))
-
-
-isInnerSelected : Int -> Bool
-isInnerSelected selected =
-    List.member selected hoursInner
-
-
-pointerAngle12 : Int -> Int
-pointerAngle12 =
-    pointerAngle 12
-
-
-pointerAngle60 : Int -> Int
-pointerAngle60 =
-    pointerAngle 60
-
-
-pointerAngle : Int -> Int -> Int
-pointerAngle base value =
+clockFaceView : CalculatedModel -> Html Msg
+clockFaceView cm =
     let
-        angle =
-            round <| (360 / (toFloat base)) * (toFloat value)
+        outerNumbersView =
+            List.map2 (numberViewWrapper cm.selectedNumber "number-outer") cm.outerNumbers outerPositions
+
+        pointerViewToRender =
+            pointerView cm.isShortPointer cm.pointerAngle
     in
-        if angle == 360 then
-            0
-        else
-            angle
+        div [ Html.Attributes.class "time-picker-clock-face" ]
+            [ div [ Html.Attributes.class "clock-face-background" ] []
+            , div
+                [ Html.Attributes.class "numbers-container"
+                , onMouseMove MouseMove
+                , onMouseDown MouseDown
+                , onMouseUp MouseUp
+                ]
+                ((pointerViewToRender :: outerNumbersView)
+                    ++ [ div [ Html.Attributes.class "filler" ] [] ]
+                )
+            ]
 
 
 pointerView : Bool -> Int -> Html Msg
@@ -688,30 +412,18 @@ pointerView isInner angle =
             [ div [ Html.Attributes.class "arrow" ] [] ]
 
 
-outerNumbersView : List Int -> Int -> List (Html Msg)
-outerNumbersView numbers selectedNumber =
-    List.map2 (numberViewWrapper selectedNumber "number-outer") numbers outerPositions
-
-
-innerNumbersView : List Int -> Int -> List (Html Msg)
-innerNumbersView numbers selectedNumber =
-    List.map2 (numberViewWrapper selectedNumber "number-inner") numbers innerPositions
-
-
-numberViewWrapper : Int -> String -> Int -> Position -> Html Msg
+numberViewWrapper : String -> String -> String -> Position -> Html Msg
 numberViewWrapper selectedNumber spanClass number position =
     if selectedNumber == number then
-        numberView (spanClass ++ " number-selected") number position
-    else if selectedNumber == 0 && number == 12 then
         numberView (spanClass ++ " number-selected") number position
     else
         numberView spanClass number position
 
 
-numberView : String -> Int -> Position -> Html Msg
+numberView : String -> String -> Position -> Html Msg
 numberView spanClass number position =
     span
         [ Html.Attributes.class spanClass
         , Html.Attributes.style [ ( "transform", "translate(" ++ (toString position.x) ++ "px, " ++ (toString position.y) ++ "px)" ) ]
         ]
-        [ text <| toString number ]
+        [ text number ]

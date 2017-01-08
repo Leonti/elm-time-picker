@@ -1,16 +1,21 @@
 module TestUtils exposing (initialModel)
 
 import TimePicker
+import CalculatedModel exposing (..)
 
 
-initialModel : Bool -> Int -> Int -> TimePicker.Model
+initialModel : Bool -> Int -> Int -> InputModel
 initialModel is24Hours hours minutes =
     let
-        ( timePickerModel, timePickerCmd ) =
+        ( model, timePickerCmd ) =
             TimePicker.init
                 { is24Hours = is24Hours
                 , hours = hours
                 , minutes = minutes
                 }
     in
-        timePickerModel
+        { is24Hours = model.settings.is24Hours
+        , mode = model.mode
+        , hoursSelected = model.hoursSelected
+        , minutesSelected = model.minutesSelected
+        }
