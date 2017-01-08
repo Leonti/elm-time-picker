@@ -469,24 +469,24 @@ doubleDigitFormat number =
         toString number
 
 
-numbersDisplay : Mode -> Int -> Int -> Html Msg
-numbersDisplay mode hours minutes =
+digitalNumbersDisplay : Mode -> String -> String -> Html Msg
+digitalNumbersDisplay mode hours minutes =
     div [ Html.Attributes.class "time-display-numbers" ]
-        [ (numberDisplay (mode == Hours) hours Hours)
+        [ (digitalNumberDisplay (mode == Hours) hours Hours)
         , span [] [ text ":" ]
-        , (numberDisplay (mode == Minutes) minutes Minutes)
+        , (digitalNumberDisplay (mode == Minutes) minutes Minutes)
         ]
 
 
-numberDisplay : Bool -> Int -> Mode -> Html Msg
-numberDisplay isActive value otherMode =
+digitalNumberDisplay : Bool -> String -> Mode -> Html Msg
+digitalNumberDisplay isActive value otherMode =
     case isActive of
         True ->
             span
                 [ Html.Attributes.class "number"
                 , onClick <| ModeSwitch otherMode
                 ]
-                [ text <| doubleDigitFormat value ]
+                [ text value ]
 
         False ->
             span
@@ -494,31 +494,31 @@ numberDisplay isActive value otherMode =
                 , Html.Attributes.style [ ( "opacity", "0.7" ) ]
                 , onClick <| ModeSwitch otherMode
                 ]
-                [ text <| doubleDigitFormat value ]
+                [ text <| value ]
 
 
-timeDisplay24h : Mode -> Int -> Int -> Html Msg
+timeDisplay24h : Mode -> String -> String -> Html Msg
 timeDisplay24h mode hours minutes =
     div [ Html.Attributes.class "time-display-numbers-container" ]
         [ div [ Html.Attributes.class "side-filler" ] []
-        , (numbersDisplay mode hours minutes)
+        , (digitalNumbersDisplay mode hours minutes)
         , div [ Html.Attributes.class "side-filler" ] []
         ]
 
 
-timeDisplay12h : Mode -> Int -> Int -> Html Msg
-timeDisplay12h mode hours minutes =
+timeDisplay12h : Mode -> TimePeriod -> String -> String -> Html Msg
+timeDisplay12h mode timePeriod hours minutes =
     div [ Html.Attributes.class "time-display-numbers-container" ]
         [ div [ Html.Attributes.class "side-filler" ] []
-        , (numbersDisplay mode (toAmHours hours) minutes)
+        , (digitalNumbersDisplay mode hours minutes)
         , div [ Html.Attributes.class "time-periods" ]
             [ div
-                [ Html.Attributes.class <| periodClass PM hours
+                [ Html.Attributes.class <| periodClass PM timePeriod
                 , onClick <| TimePeriodSwitch PM
                 ]
                 [ text "PM" ]
             , div
-                [ Html.Attributes.class <| periodClass AM hours
+                [ Html.Attributes.class <| periodClass AM timePeriod
                 , onClick <| TimePeriodSwitch AM
                 ]
                 [ text "AM" ]
@@ -544,17 +544,17 @@ toPmHours hours =
         hours
 
 
-periodClass : TimePeriod -> Int -> String
-periodClass timePeriod hours =
+periodClass : TimePeriod -> TimePeriod -> String
+periodClass timePeriod selectedTimePeriod =
     case timePeriod of
         AM ->
-            if isAm hours then
+            if selectedTimePeriod == AM then
                 "am"
             else
                 "am inactive"
 
         PM ->
-            if isAm hours then
+            if selectedTimePeriod == AM then
                 "pm inactive"
             else
                 "pm"
@@ -576,35 +576,39 @@ isAm hours =
         False
 
 
-timeDisplay : Bool -> Mode -> Int -> Int -> Html Msg
-timeDisplay is24Hours =
-    case is24Hours of
+digitalTimeView : CalculatedModel -> Html Msg
+digitalTimeView cm =
+    case cm.timePeriodShown of
         True ->
-            timeDisplay24h
+            timeDisplay12h cm.mode cm.timePeriodSelected cm.digitalTimeHours cm.digitalTimeMinutes
 
         False ->
-            timeDisplay12h
+            timeDisplay24h cm.mode cm.digitalTimeHours cm.digitalTimeMinutes
 
 
 view : Model -> Html Msg
 view model =
-    div [ Html.Attributes.class "time-picker" ]
-        [ div [ Html.Attributes.class "time-display" ]
-            [ timeDisplay model.settings.is24Hours model.mode model.hoursSelected model.minutesSelected
-            ]
-        , div [ Html.Attributes.class "time-picker-clock-face" ]
-            [ div [ Html.Attributes.class "clock-face-background" ] []
-            , div
-                [ Html.Attributes.class "numbers-container"
-                , onMouseMove MouseMove
-                , onMouseDown MouseDown
-                , onMouseUp MouseUp
+    let
+        calculatedModel =
+            calculateModel model
+    in
+        div [ Html.Attributes.class "time-picker" ]
+            [ div [ Html.Attributes.class "time-display" ]
+                [ digitalTimeView calculatedModel
                 ]
-                ((clockFace model.settings.is24Hours model.mode model.hoursSelected model.minutesSelected)
-                    ++ [ div [ Html.Attributes.class "filler" ] [] ]
-                )
+            , div [ Html.Attributes.class "time-picker-clock-face" ]
+                [ div [ Html.Attributes.class "clock-face-background" ] []
+                , div
+                    [ Html.Attributes.class "numbers-container"
+                    , onMouseMove MouseMove
+                    , onMouseDown MouseDown
+                    , onMouseUp MouseUp
+                    ]
+                    ((clockFace model.settings.is24Hours model.mode model.hoursSelected model.minutesSelected)
+                        ++ [ div [ Html.Attributes.class "filler" ] [] ]
+                    )
+                ]
             ]
-        ]
 
 
 clockFace : Bool -> Mode -> Int -> Int -> List (Html Msg)
