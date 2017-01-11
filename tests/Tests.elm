@@ -8,6 +8,7 @@ import TestUtils exposing (..)
 import PointerTests
 import SelectedNumberTests
 import PointerAngleTests
+import SelectedTimeTests
 
 
 all : Test
@@ -23,6 +24,7 @@ all =
         , PointerTests.testsPointerLength
         , SelectedNumberTests.testsSelectedNumber
         , PointerAngleTests.testsPointerAngle
+        , SelectedTimeTests.testsSelectedTime
         ]
 
 
