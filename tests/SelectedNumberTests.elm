@@ -20,7 +20,7 @@ testsSelectedNumber =
                         calculateModel <| { model | mode = Minutes }
                 in
                     Expect.equal calculatedModel.selectedNumber "00"
-        , test "Should not have zero in front for minute view below 10" <|
+        , test "Should have zero in front for minute view below 10" <|
             \() ->
                 let
                     model =
@@ -29,7 +29,7 @@ testsSelectedNumber =
                     calculatedModel =
                         calculateModel <| { model | mode = Minutes }
                 in
-                    Expect.equal calculatedModel.selectedNumber "7"
+                    Expect.equal calculatedModel.selectedNumber "07"
         , test "Should not have zero for hour view below 10 on AM/PM view" <|
             \() ->
                 let

@@ -160,7 +160,7 @@ toSelectedNumber mode is24Hours hours minutes =
                 toDoubleZeroString <| toAmHours hours
 
         Minutes ->
-            toDoubleZeroString minutes
+            doubleDigitFormat minutes
 
 
 digitalTimeHoursToDisplay : Bool -> Int -> String
