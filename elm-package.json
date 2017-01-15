@@ -1,13 +1,16 @@
 {
     "version": "1.0.0",
-    "summary": "helpful summary of your project, less than 80 characters",
-    "repository": "https://github.com/user/project.git",
+    "summary": "Elm time picker with a round clock",
+    "repository": "https://github.com/Leonti/elm-time-picker.git",
     "license": "BSD3",
     "source-directories": [
         "src"
     ],
-    "exposed-modules": [],
+    "exposed-modules": [
+	"TimePicker"
+    ],
     "dependencies": {
+        "debois/elm-mdl": "8.1.0 <= v < 9.0.0",
         "elm-lang/core": "5.0.0 <= v < 6.0.0",
         "elm-lang/html": "2.0.0 <= v < 3.0.0"
     },

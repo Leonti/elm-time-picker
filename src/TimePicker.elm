@@ -1,4 +1,10 @@
-module TimePicker exposing (Model, Msg, init, update, view)
+module TimePicker exposing (Model, Msg, Settings, init, update, view)
+
+{-| TimePicker will display Material Design time picker with a round clock face
+
+@docs Settings, init, Model, Msg, update, view
+
+-}
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -14,10 +20,12 @@ type alias Position =
     }
 
 
+{-| -}
 type alias Settings =
     { is24Hours : Bool
     , hours : Int
     , minutes : Int
+    , mainColor : String
     }
 
 
@@ -65,6 +73,7 @@ modeToStep mode =
             6
 
 
+{-| -}
 type alias Model =
     { settings : Settings
     , mode : Mode
@@ -74,18 +83,18 @@ type alias Model =
     }
 
 
-init : Settings -> ( Model, Cmd Msg )
+{-| -}
+init : Settings -> Model
 init settings =
-    ( { settings = settings
-      , mode = Hours
-      , hoursSelected = settings.hours
-      , minutesSelected = settings.minutes
-      , isSelecting = False
-      }
-    , Cmd.none
-    )
+    { settings = settings
+    , mode = Hours
+    , hoursSelected = settings.hours
+    , minutesSelected = settings.minutes
+    , isSelecting = False
+    }
 
 
+{-| -}
 type Msg
     = Noop
     | ModeSwitch Mode
@@ -95,11 +104,12 @@ type Msg
     | MouseUp Offset
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+{-| -}
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         Noop ->
-            ( model, Cmd.none )
+            model
 
         MouseDown offset ->
             let
@@ -107,7 +117,7 @@ update msg model =
                     applySelection model <|
                         offsetToSelection offset (modeToStep model.mode)
             in
-                ( { modelWithSelection | isSelecting = True }, Cmd.none )
+                { modelWithSelection | isSelecting = True }
 
         MouseMove offset ->
             if model.isSelecting == True then
@@ -115,37 +125,33 @@ update msg model =
                     selection =
                         offsetToSelection offset (modeToStep model.mode)
                 in
-                    ( applySelection model selection, Cmd.none )
+                    applySelection model selection
             else
-                ( model, Cmd.none )
+                model
 
         MouseUp offset ->
             case model.mode of
                 Hours ->
-                    ( { model
+                    { model
                         | isSelecting = False
                         , mode = Minutes
-                      }
-                    , Cmd.none
-                    )
+                    }
 
                 Minutes ->
-                    ( { model | isSelecting = False }, Cmd.none )
+                    { model | isSelecting = False }
 
         ModeSwitch mode ->
-            ( { model
+            { model
                 | mode = mode
-              }
-            , Cmd.none
-            )
+            }
 
         TimePeriodSwitch timePeriod ->
             case timePeriod of
                 AM ->
-                    ( { model | hoursSelected = toAmHours model.hoursSelected }, Cmd.none )
+                    { model | hoursSelected = toAmHours model.hoursSelected }
 
                 PM ->
-                    ( { model | hoursSelected = toPmHours model.hoursSelected }, Cmd.none )
+                    { model | hoursSelected = toPmHours model.hoursSelected }
 
 
 applySelection : Model -> Selection -> Model
@@ -351,6 +357,7 @@ digitalTimeView cm =
             timeDisplay24h cm.mode cm.digitalTimeHours cm.digitalTimeMinutes
 
 
+{-| -}
 view : Model -> Html Msg
 view model =
     let
@@ -363,21 +370,24 @@ view model =
                 }
     in
         div [ Html.Attributes.class "time-picker" ]
-            [ div [ Html.Attributes.class "time-display" ]
+            [ div
+                [ Html.Attributes.class "time-display"
+                , Html.Attributes.style [ ( "background-color", model.settings.mainColor ) ]
+                ]
                 [ digitalTimeView calculatedModel
                 ]
-            , clockFaceView calculatedModel
+            , clockFaceView model calculatedModel
             ]
 
 
-clockFaceView : CalculatedModel -> Html Msg
-clockFaceView cm =
+clockFaceView : Model -> CalculatedModel -> Html Msg
+clockFaceView model cm =
     let
         outerNumbersView =
-            List.map2 (numberViewWrapper cm.selectedNumber "number-outer") cm.outerNumbers outerPositions
+            List.map2 (numberViewWrapper cm.selectedNumber "number-outer" model.settings.mainColor) cm.outerNumbers outerPositions
 
         pointerViewToRender =
-            pointerView cm.isShortPointer cm.pointerAngle
+            pointerView cm.isShortPointer cm.pointerAngle model.settings.mainColor
     in
         div [ Html.Attributes.class "time-picker-clock-face" ]
             [ div [ Html.Attributes.class "clock-face-background" ] []
@@ -393,8 +403,8 @@ clockFaceView cm =
             ]
 
 
-pointerView : Bool -> Int -> Html Msg
-pointerView isInner angle =
+pointerView : Bool -> Int -> String -> Html Msg
+pointerView isInner angle mainColor =
     let
         height =
             if isInner then
@@ -403,27 +413,47 @@ pointerView isInner angle =
                 "40"
     in
         div
-            [ Html.Attributes.class "arrow-contaner"
+            [ Html.Attributes.class "arrow-container"
             , Html.Attributes.style
                 [ ( "height", height ++ "%" )
+                , ( "background-color", mainColor )
                 , ( "transform", "rotateZ(" ++ toString angle ++ "deg)" )
                 ]
             ]
-            [ div [ Html.Attributes.class "arrow" ] [] ]
+            [ div
+                [ Html.Attributes.class "arrow"
+                , Html.Attributes.style
+                    [ ( "border-color", mainColor )
+                    ]
+                ]
+                []
+            ]
 
 
-numberViewWrapper : String -> String -> String -> Position -> Html Msg
-numberViewWrapper selectedNumber spanClass number position =
-    if selectedNumber == number then
-        numberView (spanClass ++ " number-selected") number position
-    else
-        numberView spanClass number position
+numberViewWrapper : String -> String -> String -> String -> Position -> Html Msg
+numberViewWrapper selectedNumber spanClass mainColor number position =
+    numberView (selectedNumber == number) spanClass number position mainColor
 
 
-numberView : String -> String -> Position -> Html Msg
-numberView spanClass number position =
-    span
-        [ Html.Attributes.class spanClass
-        , Html.Attributes.style [ ( "transform", "translate(" ++ (toString position.x) ++ "px, " ++ (toString position.y) ++ "px)" ) ]
-        ]
-        [ text number ]
+numberView : Bool -> String -> String -> Position -> String -> Html Msg
+numberView isSelected spanClass number position mainColor =
+    let
+        inlineStyle =
+            [ ( "transform", "translate(" ++ (toString position.x) ++ "px, " ++ (toString position.y) ++ "px)" ) ]
+
+        finalInnerStyle =
+            if isSelected then
+                inlineStyle ++ [ ( "background-color", mainColor ) ]
+            else
+                inlineStyle
+    in
+        span
+            [ Html.Attributes.class
+                (if isSelected then
+                    spanClass ++ " number-selected"
+                 else
+                    spanClass
+                )
+            , Html.Attributes.style finalInnerStyle
+            ]
+            [ text number ]
