@@ -7,11 +7,12 @@ import CalculatedModel exposing (..)
 initialModel : Bool -> Int -> Int -> InputModel
 initialModel is24Hours hours minutes =
     let
-        ( model, timePickerCmd ) =
+        model =
             TimePicker.init
                 { is24Hours = is24Hours
                 , hours = hours
                 , minutes = minutes
+                , mainColor = ""
                 }
     in
         { is24Hours = model.settings.is24Hours
