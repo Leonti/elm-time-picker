@@ -1,8 +1,12 @@
-module TimePicker exposing (Model, Msg, Settings, init, update, view)
+module TimePicker exposing (Model, Msg, init, Settings, update, view, selectedTime, SelectedTime)
 
-{-| TimePicker will display Material Design time picker with a round clock face
+{-|
+TimePicker will display Material Design time picker with a round clock face
 
-@docs Settings, init, Model, Msg, update, view
+TimePicker does not come with a dialog, so it can be embedded inside of a form or can be used
+with something like [elm-mdl](https://debois.github.io/elm-mdl/)
+
+@docs Settings, init, selectedTime, SelectedTime, Model, Msg, update, view
 
 -}
 
@@ -11,7 +15,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import MousePosition exposing (..)
 import TimeTypes exposing (..)
-import CalculatedModel exposing (InputModel, CalculatedModel, SelectedTime, toSelectedTime, calculateModel, toAmHours, toPmHours)
+import CalculatedModel exposing (InputModel, CalculatedModel, CurrentTime, toSelectedTime, calculateModel, toAmHours, toPmHours)
 
 
 type alias Position =
@@ -21,6 +25,14 @@ type alias Position =
 
 
 {-| -}
+type alias SelectedTime =
+    { hours : Int
+    , minutes : Int
+    }
+
+
+{-| Time Picker settings, when `is24Hours` is set to `False` AM/PM mode will be used
+-}
 type alias Settings =
     { is24Hours : Bool
     , hours : Int
@@ -83,7 +95,8 @@ type alias Model =
     }
 
 
-{-| -}
+{-| Pass time picker settings and get initial time picker model
+-}
 init : Settings -> Model
 init settings =
     { settings = settings
@@ -102,6 +115,14 @@ type Msg
     | MouseDown Offset
     | MouseMove Offset
     | MouseUp Offset
+
+
+{-| -}
+selectedTime : Model -> SelectedTime
+selectedTime model =
+    { hours = model.hoursSelected
+    , minutes = model.minutesSelected
+    }
 
 
 {-| -}
@@ -386,6 +407,14 @@ clockFaceView model cm =
         outerNumbersView =
             List.map2 (numberViewWrapper cm.selectedNumber "number-outer" model.settings.mainColor) cm.outerNumbers outerPositions
 
+        innerNumbersView =
+            Maybe.withDefault
+                [ div [] [] ]
+            <|
+                Maybe.map
+                    (\innerNumbers -> List.map2 (numberViewWrapper cm.selectedNumber "number-inner" model.settings.mainColor) innerNumbers innerPositions)
+                    cm.innerNumbers
+
         pointerViewToRender =
             pointerView cm.isShortPointer cm.pointerAngle model.settings.mainColor
     in
@@ -398,6 +427,7 @@ clockFaceView model cm =
                 , onMouseUp MouseUp
                 ]
                 ((pointerViewToRender :: outerNumbersView)
+                    ++ innerNumbersView
                     ++ [ div [ Html.Attributes.class "filler" ] [] ]
                 )
             ]

@@ -1,4 +1,4 @@
-module CalculatedModel exposing (InputModel, CalculatedModel, SelectedTime, toSelectedTime, calculateModel, toAmHours, toPmHours)
+module CalculatedModel exposing (InputModel, CalculatedModel, CurrentTime, toSelectedTime, calculateModel, toAmHours, toPmHours)
 
 import TimeTypes exposing (..)
 
@@ -11,7 +11,7 @@ type alias InputModel =
     }
 
 
-type alias SelectedTime =
+type alias CurrentTime =
     { hoursSelected : Int
     , minutesSelected : Int
     }
@@ -179,7 +179,7 @@ hoursToTimePeriod hours =
         PM
 
 
-toSelectedTime : InputModel -> Selection -> SelectedTime
+toSelectedTime : InputModel -> Selection -> CurrentTime
 toSelectedTime model selection =
     case model.mode of
         Minutes ->
@@ -210,7 +210,7 @@ toSelectedTime model selection =
                     applySelection12h model selection
 
 
-applySelection24h : InputModel -> Selection -> SelectedTime
+applySelection24h : InputModel -> Selection -> CurrentTime
 applySelection24h model selection =
     case selection.isInner of
         True ->
@@ -246,7 +246,7 @@ applySelection24h model selection =
                         }
 
 
-applySelection12h : InputModel -> Selection -> SelectedTime
+applySelection12h : InputModel -> Selection -> CurrentTime
 applySelection12h model selection =
     let
         maybeHour =

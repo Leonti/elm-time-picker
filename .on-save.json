@@ -2,7 +2,11 @@
     "commands" : [
         {
             "watch" : "src/**/*.elm",
-            "command" : "elm make src/Main.elm --output=gen/main.js --debug"
+            "command" : "cd demo && elm make Main.elm --output=../gen/main.js --debug"
+        },
+        {
+            "watch" : "demo/**/*.elm",
+            "command" : "cd demo && elm make Main.elm --output=../gen/main.js --debug"
         }
     ]
 }

@@ -16,7 +16,7 @@ testsSelectedTime =
         ]
 
 
-calculateTestSelectedTime : Mode -> Bool -> Int -> Selection -> SelectedTime
+calculateTestSelectedTime : Mode -> Bool -> Int -> Selection -> CurrentTime
 calculateTestSelectedTime mode is24Hours hours selection =
     let
         model =
