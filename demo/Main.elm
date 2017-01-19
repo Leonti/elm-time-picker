@@ -91,7 +91,6 @@ view model =
         [ Options.styled p
             [ Typo.display3 ]
             [ text <| (doubleDigitFormat model.hours) ++ ":" ++ (doubleDigitFormat model.minutes) ]
-          --        , Html.map TimePickerMsg (TimePicker.view model.timePickerModel)
         , (toggles model)
         , (dialogView model)
         , Button.render Mdl
@@ -99,6 +98,9 @@ view model =
             model.mdl
             [ Dialog.openOn "click" ]
             [ text "Change Time" ]
+        , div []
+            [ a [ Html.Attributes.href "https://github.com/Leonti/elm-time-picker" ] [ text "Project repo" ]
+            ]
         ]
 
 
