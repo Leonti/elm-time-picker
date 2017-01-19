@@ -7,4 +7,4 @@ with something like [elm-mdl](https://debois.github.io/elm-mdl/)
 
 Module docs are [here](http://package.elm-lang.org/packages/Leonti/elm-time-picker)  
 
-[[https://raw.githubusercontent.com/Leonti/elm-time-picker/master/screenshot.png|alt=TimePicker]]    
+![alt tag](https://raw.githubusercontent.com/Leonti/elm-time-picker/master/screenshot.png|alt=TimePicker)     
