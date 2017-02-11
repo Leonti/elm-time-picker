@@ -16,6 +16,8 @@ import Html.Events exposing (onClick)
 import MousePosition exposing (..)
 import TimeTypes exposing (..)
 import CalculatedModel exposing (InputModel, CalculatedModel, CurrentTime, toSelectedTime, calculateModel, toAmHours, toPmHours)
+import Date exposing (Date, hour, minute)
+import Date.Extra.Field as Field
 
 
 type alias Position =
@@ -35,8 +37,6 @@ type alias SelectedTime =
 -}
 type alias Settings =
     { is24Hours : Bool
-    , hours : Int
-    , minutes : Int
     , mainColor : String
     }
 
@@ -89,20 +89,18 @@ modeToStep mode =
 type alias Model =
     { settings : Settings
     , mode : Mode
-    , hoursSelected : Int
-    , minutesSelected : Int
+    , date : Date
     , isSelecting : Bool
     }
 
 
 {-| Pass time picker settings and get initial time picker model
 -}
-init : Settings -> Model
-init settings =
+init : Settings -> Date -> Model
+init settings date =
     { settings = settings
     , mode = Hours
-    , hoursSelected = settings.hours
-    , minutesSelected = settings.minutes
+    , date = date
     , isSelecting = False
     }
 
@@ -118,11 +116,9 @@ type Msg
 
 
 {-| -}
-selectedTime : Model -> SelectedTime
+selectedTime : Model -> Date
 selectedTime model =
-    { hours = model.hoursSelected
-    , minutes = model.minutesSelected
-    }
+    model.date
 
 
 {-| -}
@@ -167,12 +163,24 @@ update msg model =
             }
 
         TimePeriodSwitch timePeriod ->
-            case timePeriod of
-                AM ->
-                    { model | hoursSelected = toAmHours model.hoursSelected }
+            let
+                hoursSelected =
+                    case timePeriod of
+                        AM ->
+                            toAmHours <| hour model.date
 
-                PM ->
-                    { model | hoursSelected = toPmHours model.hoursSelected }
+                        PM ->
+                            toPmHours <| hour model.date
+
+                updatedDate =
+                    case (Field.fieldToDate (Field.Hour hoursSelected) model.date) of
+                        Just date ->
+                            date
+
+                        Nothing ->
+                            model.date
+            in
+                { model | date = updatedDate }
 
 
 applySelection : Model -> Selection -> Model
@@ -182,15 +190,35 @@ applySelection model selection =
             toSelectedTime
                 { is24Hours = model.settings.is24Hours
                 , mode = model.mode
-                , hoursSelected = model.hoursSelected
-                , minutesSelected = model.minutesSelected
+                , hoursSelected = hour model.date
+                , minutesSelected = minute model.date
                 }
                 selection
+
+        updatedHoursDate =
+            case (Field.fieldToDate (Field.Hour selectedTime.hoursSelected) model.date) of
+                Just date ->
+                    date
+
+                Nothing ->
+                    model.date
+
+        updatedMinutesDate =
+            case (Field.fieldToDate (Field.Minute selectedTime.minutesSelected) updatedHoursDate) of
+                Just date ->
+                    date
+
+                Nothing ->
+                    updatedHoursDate
     in
-        { model
-            | hoursSelected = selectedTime.hoursSelected
-            , minutesSelected = selectedTime.minutesSelected
-        }
+        { model | date = updatedMinutesDate }
+
+
+
+--        { model
+--            | hoursSelected = selectedTime.hoursSelected
+--            , minutesSelected = selectedTime.minutesSelected
+--        }
 
 
 center : Position
@@ -386,8 +414,8 @@ view model =
             calculateModel
                 { is24Hours = model.settings.is24Hours
                 , mode = model.mode
-                , hoursSelected = model.hoursSelected
-                , minutesSelected = model.minutesSelected
+                , hoursSelected = hour model.date
+                , minutesSelected = minute model.date
                 }
     in
         div [ Html.Attributes.class "time-picker" ]

@@ -10,12 +10,19 @@ import Material
 import Material.Options
 import Material.Typography as Typo
 import Material.Options as Options
+import Date exposing (Date, hour, minute)
+import Date.Extra.Core exposing (intToMonth)
+import Date.Extra.Create exposing (dateFromFields)
+
+
+initialDate : Date
+initialDate =
+    (dateFromFields 2017 (intToMonth 2) 8 13 25 0 0)
 
 
 type alias Model =
     { timePickerModel : TimePicker.Model
-    , hours : Int
-    , minutes : Int
+    , date : Date
     , mdl : Material.Model
     , is24Hours : Bool
     }
@@ -33,9 +40,8 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { timePickerModel = timePickerModel 13 25 True
-      , hours = 13
-      , minutes = 25
+    ( { timePickerModel = timePickerModel initialDate True
+      , date = initialDate
       , mdl = Material.model
       , is24Hours = True
       }
@@ -43,14 +49,13 @@ init =
     )
 
 
-timePickerModel : Int -> Int -> Bool -> TimePicker.Model
-timePickerModel hours minutes is24Hours =
+timePickerModel : Date -> Bool -> TimePicker.Model
+timePickerModel date is24Hours =
     TimePicker.init
         { is24Hours = is24Hours
-        , hours = hours
-        , minutes = minutes
         , mainColor = "#00bcd4"
         }
+        date
 
 
 dialogView : Model -> Html Msg
@@ -90,7 +95,7 @@ view model =
     div [ Html.Attributes.style [ ( "padding", "20px" ) ] ]
         [ Options.styled p
             [ Typo.display3 ]
-            [ text <| (doubleDigitFormat model.hours) ++ ":" ++ (doubleDigitFormat model.minutes) ]
+            [ text <| (doubleDigitFormat (hour model.date)) ++ ":" ++ (doubleDigitFormat (minute model.date)) ]
         , (toggles model)
         , (dialogView model)
         , Button.render Mdl
@@ -122,20 +127,15 @@ update msg model =
             )
 
         TimeSelected ->
-            let
-                currentTime =
-                    TimePicker.selectedTime model.timePickerModel
-            in
-                ( { model
-                    | hours = currentTime.hours
-                    , minutes = currentTime.minutes
-                  }
-                , Cmd.none
-                )
+            ( { model
+                | date = TimePicker.selectedTime model.timePickerModel
+              }
+            , Cmd.none
+            )
 
         Toggle24h is24Hours ->
             ( { model
-                | timePickerModel = timePickerModel model.hours model.minutes is24Hours
+                | timePickerModel = timePickerModel model.date is24Hours
                 , is24Hours = is24Hours
               }
             , Cmd.none
